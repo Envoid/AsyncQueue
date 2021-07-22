@@ -59,7 +59,7 @@ namespace AsyncQueue
                 _waitingConsumers.Enqueue(itemCompletionEvent);
             }
 
-            var item = await itemCompletionEvent.Task.ConfigureAwait(false);
+            T item = await itemCompletionEvent.Task.ConfigureAwait(false);
 
             completionRegistration.Dispose();
 
@@ -71,13 +71,15 @@ namespace AsyncQueue
         {
             lock (_syncRoot)
             {
+                if (!_queue.Any()) { return; }
+
                 TaskCompletionSource<T> consumer;
 
                 do
                 {
                     if (_waitingConsumers.TryDequeue(out consumer))
                     {
-                        var item = RemoveAndReturnFirstQueueItem(_queue);
+                        T item = RemoveAndReturnFirstQueueItem(_queue);
 
                         if (!consumer.TrySetResult(item))
                         {
